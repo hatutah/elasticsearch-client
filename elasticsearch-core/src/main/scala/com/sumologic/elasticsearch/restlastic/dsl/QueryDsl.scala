@@ -26,6 +26,8 @@ trait QueryDsl extends DslCommons with SortDsl {
 
   trait Filter extends EsOperation
 
+  trait Function extends EsOperation
+
   case class QueryRoot(query: Query,
                        fromOpt: Option[Int],
                        sizeOpt: Option[Int],
@@ -366,6 +368,108 @@ trait QueryDsl extends DslCommons with SortDsl {
 
     override def toJson: Map[String, Any] = Map(
       _dis_max -> innerMap
+    )
+  }
+
+  case class ScriptScoreFunction(script: String) extends Function {
+    val _script_score = "script_score"
+    val _script = "seed"
+
+    override def toJson: Map[String, Any] = Map(
+      _script_score -> Map(
+        _script -> script
+      )
+    )
+  }
+
+  case class WeightFunction(weight: Float) extends Function {
+    val _weight = "weight"
+
+    override def toJson: Map[String, Any] = Map(
+      _weight -> weight
+    )
+  }
+
+
+  case class RandomScoreFunction(seed: Integer) extends Function {
+    val _random_score = "random_score"
+    val _seed = "seed"
+
+    override def toJson: Map[String, Any] = Map(
+      _random_score -> Map(
+        _seed -> seed
+      )
+    )
+  }
+
+  case class FieldValueFactorFunction(field: String,
+                                      factor: Float,
+                                      modifier: String,
+                                      missing: Double) extends Function {
+    val _field_value_factor = "field_value_factor"
+    val _field = "field"
+    val _factor = "factor"
+    val _modifier = "modifier"
+    val _missing = "missing"
+
+    override def toJson: Map[String, Any] = Map(
+      _field_value_factor -> Map(
+        _field -> field,
+        _factor -> factor,
+        _modifier -> modifier,
+        _missing -> missing
+      )
+    )
+  }
+
+  case class DecayFunction(decayFunctionName: String,
+                           fieldName: String,
+                           origin: String,
+                           scale: String,
+                           decay: String,
+                           offset: String) extends Function {
+    val _origin = "origin"
+    val _scale = "scale"
+    val _decay = "decay"
+    val _offset = "offset"
+
+    override def toJson: Map[String, Any] = Map(
+      decayFunctionName -> Map(
+        fieldName -> Map(
+          _origin -> origin,
+          _scale -> scale,
+          _decay -> decay,
+          _offset -> offset
+        )
+      )
+    )
+  }
+
+  case class FunctionScoreQuery(query: Option[Query],
+                                functions: Seq[Function],
+                                boost: Option[Float] = None,
+                                scoreMode: Option[String] = None,
+                                boostMode: Option[String] = None,
+                                minScore: Option[String] = None ) extends Query {
+    val _function_score = "function_score"
+    val _query = "query"
+    val _boost = "boost"
+    val _score_mode = "score_mode"
+    val _boost_mode = "boost_mode"
+    val _min_score = "min_score"
+
+    lazy val innerMap: Map[String, Any] = Map(functions match {
+      case x :: Nil =>  "" -> ""
+      case x :: tail => "" -> ""
+    }) ++
+      query.map(_query -> _) ++
+      boost.map(_boost -> _) ++
+      scoreMode.map(_score_mode -> _) ++
+      boostMode.map(_boost_mode -> _) ++
+      minScore.map(_min_score -> _)
+
+    override def toJson: Map[String, Any] = Map(
+      _function_score -> innerMap
     )
   }
 }
